@@ -172,3 +172,6 @@ slprj/
 *_ert_rtw/
 *_grt_rtw/
 *_slft/
+
+# VSCode settings
+.vscode
