@@ -1,0 +1,22 @@
+[tool.setuptools.packages.find]
+where = ["sindy"]
+
+[project]
+name = "sindy4engineers"
+version = "0.1.0"
+description = "SINDy Tutorial for Engineering Applications"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "casadi>=3.7.2",
+    "cvxpy>=1.7.5",
+    "jax>=0.4.30",
+    "jupyter>=1.1.1",
+    "kneed>=0.8.5",
+    "matplotlib>=3.9.4",
+    "numpy>=2.0.2",
+    "pandas>=2.3.3",
+    "pysindy==2.*",
+    "sympy>=1.14.0",
+    "tqdm>=4.67.1",
+]
