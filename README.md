@@ -23,10 +23,7 @@ pip install -e .
 
 This should automatically download and install all required Python packages to the local working directory.
 
-When running the Jupyter notebooks, please ensure that **the Jupyter root folder is set to the root folder of the repository**, and select the Python interpreter installed within the working directory.
-
 > Online binder notebook version coming soon!
-
 
 
 ## Tutorial Structure
