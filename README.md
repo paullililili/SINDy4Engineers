@@ -23,7 +23,8 @@ pip install -e .
 
 This should automatically download and install all required Python packages to the local working directory.
 
-> Online binder notebook version coming soon!
+Alternatively, the tutorial may also be opened in a browser with [Binder](https://jupyter.org/binder):
+[![Binder](https://gesis.mybinder.org/badge_logo.svg)](https://gesis.mybinder.org/v2/gh/paullililili/SINDy4Engineers/HEAD)
 
 
 ## Tutorial Structure
