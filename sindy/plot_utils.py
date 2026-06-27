@@ -181,6 +181,8 @@ def visualize_ode_2d(
     if title is not None:
         ax.set_title(title)
 
+    fig.tight_layout()
+
 
 def visualize_ode_3d(
         x: np.ndarray, t: np.ndarray, noisy_x: Optional[np.ndarray] = None,
@@ -246,6 +248,8 @@ def visualize_ode_3d(
 
     if title is not None:
         ax.set_title(title)
+
+    fig.tight_layout()
 
 
 def visualize_pde_1d(
