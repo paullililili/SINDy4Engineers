@@ -423,6 +423,28 @@ class CylinderFlow:
             cy_d: float = 1, cy_x: Optional[float] = None,
             cy_y: Optional[float] = None,
     ):
+        """
+        Initialise the cylinder flow solver.
+
+        Args:
+            Lx (float, optional): Length of the domain. Defaults to 20.0.
+            Ly (float, optional): Height of the domain. Defaults to 12.0.
+            Nx (int, optional): Number of x grid points. Defaults to 513.
+            Ny (int, optional): Number of y grid points. Defaults to 257.
+            cfl (float, optional): CFL number. Defaults to 0.25.
+            Re (float, optional): Reynolds number. Defaults to 200.
+            Pr (float, optional): Prandtl number. Defaults to 0.7.
+            rho_in (float, optional): Inflow density. Defaults to 1.
+            mach_in (float, optional): Inflow Mach number. Defaults to 0.2.
+            gamma (float, optional): Heat capacity ratio. Defaults to 1.4.
+            speed_sound (float, optional): Speed of sound. Defaults to 1.0.
+            Cp (float, optional): Specific heat capacity. Defaults to 1.0.
+            cy_d (float, optional): Cylinder diameter. Defaults to 1.
+            cy_x (Optional[float], optional): Cylinder center x position.
+                Defaults to 25% length distance away from inflow.
+            cy_y (Optional[float], optional): Cylinder center y position.
+                Defaults to center of domain.
+        """
 
         # Obtain inflow velocity
         u_in: float = mach_in * speed_sound
@@ -478,6 +500,24 @@ class CylinderFlow:
             tFinal: float, u0: np.ndarray = None,
             progress_bar: bool = True, n_checkpoint: Optional[int] = None
     ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Executes the flow solver for the specified simulation duration.
+
+        Args:
+            tFinal (float): Total physics time to simulate.
+            u0 (np.ndarray, optional): Initial state conditions, accepts matrix
+                of shape (Nx, Ny, 4). If None, defaults to a perturbed uniform
+                flow field.
+            progress_bar (bool, optional): Whether to show the progress bar.
+                Defaults to True.
+            n_checkpoint (Optional[int], optional): Simulation step interval
+                between saving to time history. If None, only returns the final
+                time simulation state.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray]: Tuple of 1D time vector and time
+                history of states in the shape (Nx, Ny, Nt, 4).
+        """
 
         # Compute time vector
         total_steps: int = int(round(tFinal/self.params.dt))
@@ -530,6 +570,16 @@ class CylinderFlow:
     @staticmethod
     @jax.jit
     def get_vorticity(u: jnp.ndarray, params: CylinderParam) -> jnp.ndarray:
+        """
+        Compute the vorticity field given the flow time history.
+
+        Args:
+            u (jnp.ndarray): Time history of simulation states.
+            params (CylinderParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: Array of vorticity shaped.
+        """
 
         # Obtain u and v
         state_u: jnp.ndarray = u[..., 1] / u[..., 0]
@@ -548,6 +598,17 @@ class CylinderFlow:
             u: jnp.ndarray, block_size: int,
             params: CylinderParam
     ) -> jnp.ndarray:
+        """
+        Runs the specified number of simulation steps.
+
+        Args:
+            u (jnp.ndarray): Current solution state.
+            block_size (int): Number of simulation steps to take.
+            params (CylinderParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: Flow state after the specified number of steps.
+        """
         
         def step(u_i: jnp.ndarray, _):
             return CylinderFlow._rk4_step(u_i, params), None
@@ -557,6 +618,13 @@ class CylinderFlow:
 
 
     def _get_u0(self) -> jnp.ndarray:
+        """
+        Returns the default initial condition to be used for the flow, which is
+        a uniform flow field but with small perturbations.
+
+        Returns:
+            jnp.ndarray: Default initial conditions.
+        """
 
         ini_r: jnp.ndarray = self.params.rho_in * jnp.ones(
             (self.params.Nx, self.params.Ny)
@@ -583,6 +651,17 @@ class CylinderFlow:
     @staticmethod
     @jax.jit
     def _compute_dt(u: jnp.ndarray, params: CylinderParam) -> jnp.ndarray:
+        """
+        Computes the time derivatives of all the states in the cylinder flow
+        field.
+
+        Args:
+            u (jnp.ndarray): Current state matrix.
+            params (CylinderParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: Returns the time derivatives of all states.
+        """
 
         # ------------------ Compute primitive states ------------------ #
 
@@ -704,6 +783,16 @@ class CylinderFlow:
     @staticmethod
     @jax.jit
     def _rk4_step(u: jnp.ndarray, params: CylinderParam) -> jnp.ndarray:
+        """
+        Time integrate using fixed step RK4.
+
+        Args:
+            u (jnp.ndarray): Current state.
+            params (CylinderParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: Flow state at the next time step.
+        """
 
         k1: jnp.ndarray = CylinderFlow._compute_dt(u, params)
         k2: jnp.ndarray = CylinderFlow._compute_dt(
