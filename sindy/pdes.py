@@ -826,6 +826,20 @@ class AnnulusFlow:
             Ntheta: int = 512, Nr: int = 32,
             cfl: float = 0.5, Ra: float = 100e6, Pr: float = 4
     ):
+        """
+        Initialize the annulus flow simulation.
+
+        Args:
+            R1 (float, optional): Inner radius. Defaults to 0.4.
+            R2 (float, optional): Outer radius. Defaults to 0.5.
+            T1 (float, optional): Wall tempearture at the top. Defaults to 1.0.
+            T2 (float, optional): Wall temperature at the bottom. Defaults to 0.0.
+            Ntheta (int, optional): Number of azimuthal grid points. Defaults to 512.
+            Nr (int, optional): Number of radial grid points. Defaults to 32.
+            cfl (float, optional): CFL number. Defaults to 0.5.
+            Ra (float, optional): Rayleigh number. Defaults to 100e6.
+            Pr (float, optional): Prandtl number. Defaults to 4.
+        """
 
         # Define mesh
         theta: jnp.ndarray = jnp.linspace(0, 2*jnp.pi, Ntheta, endpoint=False)
@@ -869,6 +883,26 @@ class AnnulusFlow:
             u0: Optional[jnp.ndarray] = None, q0: Optional[float] = None,
             progress_bar: bool = True, n_checkpoint: Optional[int] = None
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Run the annulus flow simulation.
+
+        Args:
+            tFinal (float): Total physical time to simulate.
+            u0 (Optional[jnp.ndarray], optional): Initial state conditions to
+                begin the run from, must take the shape (Ntheta, Nr, 2). If None,
+                generates a noise injected steady state flow.
+            q0 (Optional[float], optional): Initial outer wall circulation flux.
+                Defaults to None.
+            progress_bar (bool, optional): Whether to show progress bar.
+                Defaults to True.
+            n_checkpoint (Optional[int], optional): The interval at which to
+                store simulation results. Defaults to None.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray]: Returns tuple of 1D time
+                vector, state (vorticity and temperature) history with shape
+                (Ntheta, Nr, 2), and 1D vector of outer wall circulation flux.
+        """
 
         # Compute time vector
         total_steps: int = int(round(tFinal/self.params.dt))
@@ -947,6 +981,19 @@ class AnnulusFlow:
             state: tuple[jnp.ndarray, float], block_size: int,
             params: AnnulusParam
     ) -> tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Jax JIT time simulation block to run through a set number of simulation
+        steps.
+
+        Args:
+            state (tuple[jnp.ndarray, float]): Current state containing u and q.
+            block_size (int): Number of simulation steps to run.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            tuple[jnp.ndarray, jnp.ndarray]: Tuple of u and q from the ran
+                simulation.
+        """
         
         def step(state_i: jnp.ndarray, _):
             return AnnulusFlow._step(state_i, params), None
@@ -956,6 +1003,13 @@ class AnnulusFlow:
 
 
     def _get_u0(self) -> tuple[jnp.ndarray, float]:
+        """
+        Generates the default initial condition which is the steady state flow
+        with additive noise injected.
+
+        Returns:
+            tuple[jnp.ndarray, float]: Returns initial condition u and q.
+        """
 
         u_shape = (self.params.Ntheta, self.params.Nr)
 
@@ -977,6 +1031,20 @@ class AnnulusFlow:
     def _compute_dt(
         u: jnp.ndarray, q: float, params: AnnulusParam
     ) -> tuple[jnp.ndarray, float]:
+        """
+        Evalutes the time derivatives of each state variable (vorticity and
+        temperature). Also computes the time derivative of the outer wall
+        circulation flux.
+
+        Args:
+            u (jnp.ndarray): Current state array (vorticity and temperature).
+            q (float): Current outer wall circulation flux.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            tuple[jnp.ndarray, float]: Tuple of state time derivatives and
+                outer wall circulation flux derivative.
+        """
 
         # -------------- Compute common variables -------------- #
 
@@ -1064,6 +1132,16 @@ class AnnulusFlow:
     def _step(
             state: tuple[jnp.ndarray, float], params: AnnulusParam
     ) -> jnp.ndarray:
+        """
+        Executes a single time step using RK4 time integration method.
+
+        Args:
+            state (tuple[jnp.ndarray, float]): Current state containing u and q.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: The next state (u, q).
+        """
         
         # Unpack state and volumetric angular flux
         u, q = state
@@ -1104,6 +1182,18 @@ class AnnulusFlow:
     def _compute_streamfunction(
             u: jnp.ndarray, q: float, params: AnnulusParam
     ) -> jnp.ndarray:
+        """
+        Solve the Poisson equation to compute streamfunction using a pseudo-
+        spectral method.
+
+        Args:
+            u (jnp.ndarray): Current state array (vorticity and temperature).
+            q (float): Current outer wall streamfunction boundary condition.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            jnp.ndarray: Streamfunction at the current time.
+        """
 
         # Compute FFT along theta axis
         rhs: jnp.ndarray = jnp.fft.fft(u[..., 0], axis=0)
@@ -1124,6 +1214,18 @@ class AnnulusFlow:
     def _compute_vel(
             psi: jnp.ndarray, params: AnnulusParam
     ) -> tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Compute the azimuthal and radial velocity components from the
+        streamfunction.
+
+        Args:
+            psi (jnp.ndarray): Streamfunction.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            tuple[jnp.ndarray, jnp.ndarray]: Tuple of azimuthal and radial
+                velocities.
+        """
         
         u_theta: jnp.ndarray = -AnnulusFlow.ddr(psi, params.dr)
         u_r: jnp.ndarray = AnnulusFlow.ddtheta(
@@ -1141,6 +1243,27 @@ class AnnulusFlow:
         jnp.ndarray, jnp.ndarray, jnp.ndarray,
         jnp.ndarray, jnp.ndarray, jnp.ndarray
     ]:
+        """
+        Using the state history matrix, obtain the flow velocities as well as
+        the low-dimensional states proposed in (Huang et al, 2023).
+
+        Args:
+            u (jnp.ndarray): State matrix over time, expecting shape of
+                (Ntheta, Nr, Nt, 2).
+            q (jnp.ndarray): Corresponding time history vector of outer wall
+                cirulation flux.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            tuple:
+                u_theta (jnp.ndarray): Azimuthal velocity.
+                u_r (jnp.ndarray): Radial velocity.
+                psi (jnp.ndarray): Streamfunction.
+                ang_mom (jnp.ndarray): Time history of average angular momentum
+                    around the geometry.
+                com_X (jnp.ndarray): X-coordinate of the fluid centre of mass.
+                com_Y (jnp.ndarray): Y-coordinate of the fluid centre of mass.
+        """
         
         def vel_step(u_i, q_i):
             psi = AnnulusFlow._compute_streamfunction(u_i, q_i, params)
@@ -1193,6 +1316,17 @@ class AnnulusFlow:
     def _compute_flowrate(
             u: jnp.ndarray, psi: jnp.ndarray, params: AnnulusParam
     ) -> float:
+        """
+        Compute the time derivative of the outer wall circulation flux.
+
+        Args:
+            u (jnp.ndarray): Current state matrix.
+            psi (jnp.ndarray): Current streamfunction matrix.
+            params (AnnulusParam): Simulation parameters.
+
+        Returns:
+            float: The time derivative of Q(t).
+        """
         
         u_theta, u_r = AnnulusFlow._compute_vel(psi, params)
 
@@ -1223,6 +1357,20 @@ class AnnulusFlow:
             Ntheta: int, Nr: int,
             dr: float, r: jnp.ndarray
     ) -> jnp.ndarray:
+        """
+        Pre-compute the inverse of the tridiagonal Poisson matrix for each
+        azimuthal Fourier mode (to be used for pseudo-spectral methods during
+        simulation).
+
+        Args:
+            Ntheta (int): Number of azimuthal grid points.
+            Nr (int): Number of radial grid points.
+            dr (float): Radial grid point interval.
+            r (jnp.ndarray): Vector of radial coordinates.
+
+        Returns:
+            jnp.ndarray: Stacked inverse matrices for all k modes.
+        """
 
         k = jnp.fft.fftfreq(Ntheta) * Ntheta
 
@@ -1298,58 +1446,3 @@ class AnnulusFlow:
         ) / dr**2
 
         return jnp.concatenate([inner, interior, outer], axis=1)
-    
-
-    @staticmethod
-    @jax.jit
-    def tridiagonal_solve(
-            A_triband: jnp.ndarray, b: jnp.ndarray
-    ) -> jnp.ndarray:
-        """
-        Implementation of Thomas algorithm for solving tridiagonal matrix in
-        the form b=Ax.
-
-        Args:
-            A_triband (jnp.ndarray): (3,N) shaped matrix containing the three
-                bands of matrix A.
-            b (jnp.ndarray): (N,) shaped vector b.
-
-        Returns:
-            jnp.ndarray: (N,) shaped vector x.
-        """
-        
-        # Extract bands
-        dl = A_triband[0]
-        d  = A_triband[1]
-        du = A_triband[2]
-
-        # Define forward sweep function
-        def forward_sweep(carry, inputs):
-            cp_prev, dp_prev = carry
-            low, diag, upp, rhs = inputs
-            
-            denom = diag - low * cp_prev
-
-            cp = upp / denom
-            dp = (rhs - low * dp_prev) / denom
-            
-            return (cp, dp), (cp, dp)
-        
-        # Set up and conduct the forward sweep of the algorithm
-        xs = (dl, d, du, b)
-        init_carry_fwd = (0.0, 0.0)
-        _, (cp_all, dp_all) = jax.lax.scan(forward_sweep, init_carry_fwd, xs)
-
-        # Define back substitution part of the algorithm
-        def back_sub(x_next, inputs):
-            cp, dp = inputs
-            x_curr = dp - cp * x_next
-            return x_curr, x_curr
-        
-        # Set up and carry out back substitution.
-        init_carry_bwd = 0.0
-        _, x = jax.lax.scan(
-            back_sub, init_carry_bwd, (cp_all, dp_all), reverse=True
-        )
-        
-        return x
