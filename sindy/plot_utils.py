@@ -130,7 +130,7 @@ def display_matrix(arr: np.ndarray, precision: int = 4):
 
 def visualize_ode_2d(
         x: np.ndarray, t: np.ndarray, noisy_x: Optional[np.ndarray] = None,
-        title: Optional[str] = None
+        title: Optional[str] = None, equal_axis: Optional[bool] = False
 ):
     """
     Function to visualise a given 2D time-series dataset.
@@ -142,6 +142,8 @@ def visualize_ode_2d(
             be plotted for comparison, must have matching shape as `x`.
             Defaults to None.
         title (Optional[str], optional): Title of the plot. Defaults to None.
+        equal_axis (Optional[bool], optional): Whether to set equal axis on the
+            state plot. Defaults to False.
     """
     
     fig = plt.figure(figsize=(14,6))
@@ -180,6 +182,9 @@ def visualize_ode_2d(
 
     if title is not None:
         ax.set_title(title)
+
+    if equal_axis:
+        ax.set_aspect('equal')
 
     fig.tight_layout()
 
