@@ -7,7 +7,8 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.signal import savgol_filter
 from scipy.stats.qmc import LatinHypercube
-from typing import Optional
+from tqdm import tqdm
+from typing import Optional, Callable
 
 from ..library import poly_lib
 from ..optimizer import stridge as _stridge
@@ -219,10 +220,7 @@ def run_active_sindy(
     smoother_window      = params.get('smoother_window', 7)
     n_candidates_to_drop = params.get('n_candidates_to_drop', 1)
 
-    for iteration in range(params['max_iter']):
-
-        if iteration % 10 == 0:
-            print(f"  Active iteration {iteration + 1}/{params['max_iter']}")
+    for iteration in tqdm(range(params['max_iter']), desc='Iteration: '):
 
         data_count = sum(len(t) for t in t_train_list)
 
@@ -249,6 +247,7 @@ def run_active_sindy(
         else:
             sparsity_equal_itcount = 0
 
+        # --- Check convergence criteria ---
         coef_mad = np.median(
             np.abs(xis - coeffs_estimated[:, :, np.newaxis]), axis=-1
         )
@@ -378,10 +377,7 @@ def run_random_sindy(
     smoother_window      = params.get('smoother_window', 7)
     n_candidates_to_drop = params.get('n_candidates_to_drop', 1)
 
-    for iteration in range(params['max_iter']):
-
-        if iteration % 10 == 0:
-            print(f"  Random iteration {iteration + 1}/{params['max_iter']}")
+    for iteration in tqdm(range(params['max_iter']), 'Iteration: '):
 
         data_count = sum(len(t) for t in t_train_list)
 
@@ -467,7 +463,7 @@ def run_stats(
         params: dict,
         cand_list: list,
         n_repetitions: int,
-        run_fn
+        run_fn: Callable
 ) -> dict:
     """
     Repeat an Active or Random SINDy run ``n_repetitions`` times for each
@@ -480,7 +476,7 @@ def run_stats(
             the original dict is not modified).
         cand_list (list[int]): Candidate pool sizes to sweep.
         n_repetitions (int): Independent repetitions per pool size.
-        run_fn (callable): :func:`run_active_sindy` or :func:`run_random_sindy`.
+        run_fn (Callable): :func:`run_active_sindy` or :func:`run_random_sindy`.
 
     Returns:
         dict: Keyed by ``n_candidates``, each value is a dict with:
