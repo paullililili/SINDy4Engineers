@@ -16,6 +16,7 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+SINDyforEng/
 .eggs/
 lib/
 lib64/
