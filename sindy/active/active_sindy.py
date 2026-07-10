@@ -220,15 +220,16 @@ def run_active_sindy(
     smoother_window      = params.get('smoother_window', 7)
     n_candidates_to_drop = params.get('n_candidates_to_drop', 1)
 
+    # Initialise theta and xdot matrices
+    theta, xdot, _ = _build_theta_xdot(
+        x_train_list, t_train_list,
+        params['poly_degree'], params['feature_names'],
+        smoother_window=smoother_window
+    )
+
     for iteration in tqdm(range(params['max_iter']), desc='Iteration: '):
 
         data_count = sum(len(t) for t in t_train_list)
-
-        theta, xdot, _ = _build_theta_xdot(
-            x_train_list, t_train_list,
-            params['poly_degree'], params['feature_names'],
-            smoother_window=smoother_window
-        )
 
         # xis shape: (l, n_dims, n_ensemble)
         xis = _run_ensemble(
@@ -328,17 +329,31 @@ def run_active_sindy(
         )
 
         if sol.status == 0 and sol.y.shape[1] == len(t_eval_query):
+
             x_query = sol.y.T
             noise_std = calculate_rms(x_query) * params['relative_noise_factor']
-            x_train_list.append(x_query + np.random.normal(0, noise_std, x_query.shape))
+            x_query += np.random.normal(0, noise_std, x_query.shape)
+
+            # Compute theta and xdot matrices for the new data points
+            theta_new, xdot_new, _ = _build_theta_xdot(
+                [x_query], [sol.t],
+                params['poly_degree'], params['feature_names'],
+                smoother_window=smoother_window
+            )
+
+            # Append to data variables
+            x_train_list.append(x_query)
             t_train_list.append(sol.t)
+            theta = np.concatenate((theta, theta_new), axis=0)
+            xdot = np.concatenate((xdot, xdot_new), axis=0)
+
         else:
             print(f"  Warning: solver failed at iteration {iteration + 1}. Skipping.")
 
         points_ic.append(query_ic)
 
     status = "converged" if converged else f"reached max iterations ({params['max_iter']})"
-    print(f"\nActive SINDy finished — {status}.")
+    print(f"Active SINDy finished — {status}.\n")
 
     return l0_history, l2_history, data_count_history
 
@@ -377,15 +392,16 @@ def run_random_sindy(
     smoother_window      = params.get('smoother_window', 7)
     n_candidates_to_drop = params.get('n_candidates_to_drop', 1)
 
+    # Initialise theta and xdot matrices
+    theta, xdot, _ = _build_theta_xdot(
+        x_train_list, t_train_list,
+        params['poly_degree'], params['feature_names'],
+        smoother_window=smoother_window
+    )
+
     for iteration in tqdm(range(params['max_iter']), 'Iteration: '):
 
         data_count = sum(len(t) for t in t_train_list)
-
-        theta, xdot, _ = _build_theta_xdot(
-            x_train_list, t_train_list,
-            params['poly_degree'], params['feature_names'],
-            smoother_window=smoother_window
-        )
 
         xis = _run_ensemble(
             theta, xdot,
@@ -443,17 +459,28 @@ def run_random_sindy(
         )
 
         if sol.status == 0 and sol.y.shape[1] == len(t_eval_query):
+
             x_query = sol.y.T
             noise_std = calculate_rms(x_query) * params['relative_noise_factor']
-            x_train_list.append(x_query + np.random.normal(0, noise_std, x_query.shape))
+            x_query += np.random.normal(0, noise_std, x_query.shape)
+
+            # Compute theta and xdot matrices for the new data points
+            theta_new, xdot_new, _ = _build_theta_xdot(
+                [x_query], [sol.t],
+                params['poly_degree'], params['feature_names'],
+                smoother_window=smoother_window
+            )
+
+            # Append to data variables
+            x_train_list.append(x_query)
             t_train_list.append(sol.t)
-        else:
-            print(f"  Warning: solver failed at iteration {iteration + 1}. Skipping.")
+            theta = np.concatenate((theta, theta_new), axis=0)
+            xdot = np.concatenate((xdot, xdot_new), axis=0)
 
         points_ic.append(query_ic)
 
     status = "converged" if converged else f"reached max iterations ({params['max_iter']})"
-    print(f"\nRandom SINDy finished — {status}.")
+    print(f"Random SINDy finished — {status}.\n")
 
     return l0_history, l2_history, data_count_history
 
