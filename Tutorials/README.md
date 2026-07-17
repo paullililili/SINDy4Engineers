@@ -4,7 +4,7 @@ Welcome to SINDy tutorial! The tutorials are written in [Jupyter](https://jupyte
 
 The tutorial is structured as follows:
 
-* §1 SINDy and its Extensions
+* **§1 SINDy and its Extensions**
    * 1-1 Introduction to SINDy - A brief introduction to SINDy and how to run your first SINDy example.
    * 1-2 Ill-Conditioned Regression - Demonstrates commonly faced issues when applying SINDy and how to address them.
    * 1-3 Embedding Prior Knowledge - Presents how to bake in prior physics knowledge and constraints within SINDy.
@@ -13,10 +13,10 @@ The tutorial is structured as follows:
    * 1-6 SINDy and Controls - Introducing SINDy with controls (SINDyc) formulation and how it may integrated with model predictive control (MPC).
    * 1-7 Weak Form SINDy - Presents the weak formulation of SINDy which circumvents the need to compute the time derivative from noisy data. The method is applicable to both ODEs and PDEs.
    * 1-8 Ensembling Methods - Introduces SINDy with ensembling methods, and how one may employ it to quantify uncertainty and guide active learning strategies.
- * §2 UAV System Identification
+ * **§2 UAV System Identification**
    * 2-1 Data Preparation - Walks through a typical data pre-processing and clean up process.
    * 2-2 Learning Quadcopter Dynamics - Using the cleaned data and prior physics knowledge, we employ SINDy to discover the governing ODEs of a quadcopter.
- * §3 Thermosyphon Heat Exchanger
+ * **§3 Thermosyphon Heat Exchanger**
    * 3-1 Thermosyphon Flow - Introduces the thermosyphon flow and simulation, as well as generating the required training data.
    * 3-2 PDE Learning - Application of SINDy to identify the governing PDEs of the flow.
    * 3-3 Direct ODE Learning - Identification of low-dimensional ODE from data using informed choice of coordinate basis.

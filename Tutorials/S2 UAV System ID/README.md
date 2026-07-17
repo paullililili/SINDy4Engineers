@@ -5,7 +5,7 @@ With the increasing prevalence and importance of UAS (unmanned aerial systems) i
 Data-driven identification methods such as SINDy allow us to identify a system directly from data. The learned system may allow us to correct for any mismatches in the derived model, or used to aid in developing a robust controller for the system. However, there are also a number of common challenges that we will seek to address in this tutorial:
 * Real sensors are noisy, the data must be pre-processed using data smoothing methods demonstrated in section 1 of the tutorial.
 * Real systems often contain messy dynamics that are not easily defined as linear combination of nonlinear functions. For example, the equation may contain reciprocals, exponents, in-function parameters etc. To address this, we must embed known physics of the system into the learning process by carefully selecting the appropriate library function, constraining known coefficients, and enforcing known sparsity.
-* Not all flight data is useful, we will learn very little of the lateral dynamics of an aircraft if it only executes longitudinal maneuver. The inputs given in a flight test must be carefully designed to excite all relevant dynamics.
+* Not all flight data is useful, we will learn very little of the lateral dynamics of an aircraft if it only executes longitudinal manoeuvre. The inputs given in a flight test must be carefully designed to excite all relevant dynamics.
 
 The system identification process here can also be applied to other dynamical systems. For instance, in non-cooperative target tracking of orbital vehicles, it follows known orbital mechanics that can be enforced, but with unknown thrust characteristics that must be learned.
 

@@ -57,11 +57,11 @@ def stlsq(
             mask_xi[:, state] = np.abs(xi[:, state]) >= lam
             xi[mask_xi == False] = 0.0
 
-        # Check for convergence
-        if np.array_equal(mask_xi, prev_mask_xi):
-            break
-        else:
-            prev_mask_xi = np.copy(mask_xi)
+            # Check for convergence
+            if np.array_equal(mask_xi, prev_mask_xi):
+                break
+            else:
+                prev_mask_xi = np.copy(mask_xi)
             
     return xi
 
@@ -124,11 +124,11 @@ def stridge(
             mask_xi[:, state] = np.abs(xi[:, state]) >= lam
             xi[mask_xi == False] = 0.0
 
-        # Check for convergence
-        if np.array_equal(mask_xi, prev_mask_xi):
-            break
-        else:
-            prev_mask_xi = np.copy(mask_xi)
+            # Check for convergence
+            if np.array_equal(mask_xi, prev_mask_xi):
+                break
+            else:
+                prev_mask_xi = np.copy(mask_xi)
             
     return xi
 

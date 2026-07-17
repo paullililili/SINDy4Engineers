@@ -217,6 +217,17 @@ class AESINDy:
 
 
     def compute_loss(self, X: np.ndarray, X_dot: np.ndarray) -> tuple[float, dict]:
+        """
+        Computes the loss function of the SINDy with linear autoencoder model.
+
+        Args:
+            X (np.ndarray): Full state matrix.
+            X_dot (np.ndarray): Time derivative of full state matrix.
+
+        Returns:
+            tuple[float, dict]: Tuple of total loss and dictionary of
+                individual loss components.
+        """
 
         Z = self.A_E @ X
         Z_dot = self.A_E @ X_dot
@@ -250,6 +261,16 @@ class AESINDy:
 
     @staticmethod
     def _xavier_init(shape: tuple) -> np.ndarray:
+        """
+        Initialize weight matrix with the specified shape using Xavier (Glorot)
+        initialization.
+
+        Args:
+            shape (tuple): Shape of the matrix to be initialized.
+
+        Returns:
+            np.ndarray: The initialized matrix.
+        """
 
         dim_sum: int = sum(shape)
         limit: float = np.sqrt(6 / dim_sum)
@@ -259,6 +280,18 @@ class AESINDy:
     def get_eqn(
             self, state_names: Optional[list[str]] = None, precision: int = 3
     ) -> str:
+        """
+        Return the learned dynamical model within the latent as Latex string.
+
+        Args:
+            state_names (Optional[list[str]], optional): Names of the variables
+                on the latent space. Defaults to [z_1, z_2, ..., z_r].
+            precision (int, optional): The precision of the coefficients to be
+                outputted. Defaults to 3.
+
+        Returns:
+            str: Latex string of the learned dynamical system.
+        """
 
         if state_names is None:
             state_names = [f'z_{{{idx+1}}}' for idx in range(self.r)]
@@ -273,6 +306,20 @@ class AESINDy:
     def predict(
             self, x0: np.ndarray, tFinal: float, dt: float
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Predicts the evolution of the full state system in time using the learned
+        autoencoder mapping with latent space dynamics.
+
+        Args:
+            x0 (np.ndarray): Initial condition of the full state system.
+            tFinal (float): Simulation time.
+            dt (float): Time step.
+
+        Returns:
+            tuple[np.ndarray, np.ndarray, np.ndarray]: Returns a tuple of the
+                time vector, predicted full state system, predicted latent
+                space trajectory.
+        """
 
         z0 = self.A_E @ x0
 
@@ -285,5 +332,14 @@ class AESINDy:
     
 
     def reconstruct(self, X: np.ndarray) -> np.ndarray:
+        """
+        Reconstruct the provided input matrix using the linear autoencoder.
+
+        Args:
+            X (np.ndarray): Input matrix.
+
+        Returns:
+            np.ndarray: Reconstructed input matrix, taken from autoencoder output.
+        """
 
         return self.A_D @ self.A_E @ X
