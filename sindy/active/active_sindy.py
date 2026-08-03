@@ -3,10 +3,12 @@ from collections import Counter
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.signal import savgol_filter
 from scipy.stats.qmc import LatinHypercube
+from scipy.stats import gaussian_kde
 from tqdm import tqdm
 from typing import Optional, Callable
 from pysindy import FiniteDifference
@@ -57,7 +59,7 @@ def _differentiate(x: np.ndarray, t: np.ndarray, window: int = 7) -> np.ndarray:
         np.ndarray: Time derivatives (M, n_dims).
     """
     dt = t[1] - t[0]
-    smoothed_x = savgol_filter(x, window_length=window, polyorder=3, delta=dt, axis=0)
+    smoothed_x = savgol_filter(x, window_length=window, polyorder=3, axis=0)
     return FiniteDifference(4)._differentiate(smoothed_x, dt)
 
 
@@ -474,6 +476,9 @@ def plot_convergence_statistics(
                            s=cnt / n_reps * max_s,
                            color=color, alpha=0.7, edgecolors='none')
 
+        if true_sparsity is not None:
+            ax.axhline(true_sparsity, color='k', linestyle='--', linewidth=1)
+
         ax.set_xlabel('# data points')
         ax.set_ylabel('L0 norm')
         ax.set_title(f'{label}\n(n_cand={cand_mid})')
@@ -544,47 +549,49 @@ def plot_convergence_statistics(
 
 
 def visualize_active_sampling_3d(
-        query_ic: np.ndarray, 
+        points_ic: list[np.ndarray], 
         candidate_points: np.ndarray, 
         uncertainties: np.ndarray, 
         x: np.ndarray, 
-        vmin: float = None, 
-        vmax: float = None
+        mad_history: list[float], mad_threshold: float,
+        vmin: float = None, vmax: float = None
 ):
     """
     Visualize the Active SINDy selection process for a 3D state space.
     
     Args:
-        query_ic: The selected initial condition (3,)
+        points_ic: List of previously queried initial conditions
         candidate_points: The LHS candidate pool (N, 3)
         uncertainties: The variance of the ensemble predictions (N,)
         x: The resulting trajectory simulated from query_ic (M, 3)
+        mad_history: List of MAD values for each iteration
         vmin, vmax: Colour limits for the uncertainty colormap.
     """
 
-    fig = plt.figure(figsize=(7, 5))
-    ax = fig.add_subplot(111, projection='3d')
+    fig = plt.figure(figsize=(7, 7))
+    gs = GridSpec(2, 1, height_ratios=[4, 1])
+    ax3d = fig.add_subplot(gs[0], projection='3d')
+    axmad = fig.add_subplot(gs[1])
+
+    # Extract last query initial condition
+    query_ic = points_ic[-1]
+    past_ics = np.stack(points_ic, axis=0)
 
     # Plot the candidate pool colored by model uncertainty
-    scatter = ax.scatter(
-        candidate_points[:, 0], 
-        candidate_points[:, 1], 
-        candidate_points[:, 2], 
-        c=uncertainties, 
-        cmap='RdBu_r',
-        vmin=vmin, 
-        vmax=vmax,
-        alpha=0.8,
-        s=30,
+    scatter = ax3d.scatter(
+        candidate_points[:, 0], candidate_points[:, 1], candidate_points[:, 2], 
+        c=uncertainties, cmap='RdBu_r',
+        vmin=vmin, vmax=vmax,
+        alpha=0.8, s=30,
         label='Candidate Pool'
     )
     
     # Colorbar to quantify the uncertainty
-    cbar = plt.colorbar(scatter, ax=ax, pad=0.1)
+    cbar = plt.colorbar(scatter, ax=ax3d, pad=0.1)
     cbar.set_label('Ensemble Prediction Variance', rotation=270, labelpad=15)
 
     # Highlight the selected initial condition
-    ax.scatter(
+    ax3d.scatter(
         query_ic[0], query_ic[1], query_ic[2], 
         c='red', 
         marker='*', 
@@ -595,7 +602,7 @@ def visualize_active_sampling_3d(
     )
 
     # Trace the new trajectory acquired from the query point
-    ax.plot(
+    ax3d.plot(
         x[:, 0], x[:, 1], x[:, 2], 
         color='black', 
         linewidth=2, 
@@ -604,10 +611,45 @@ def visualize_active_sampling_3d(
         zorder=4
     )
 
+    # Plot previously sampled initial condition KDE
+    if len(past_ics) > 0:
+
+        xlim, ylim, zlim = ax3d.get_xlim(), ax3d.get_ylim(), ax3d.get_zlim()
+
+        # Compute KDE for initial conditions
+        XY_mesh = np.meshgrid(
+            np.linspace(xlim[0], xlim[1], 50),
+            np.linspace(ylim[0], ylim[1], 50),
+            indexing='ij'
+        )
+        positions = np.vstack([XY_mesh[0].ravel(), XY_mesh[1].ravel()])
+        kernel = gaussian_kde(past_ics[..., :2].T)
+        kde = np.reshape(kernel(positions).T, XY_mesh[0].shape)
+
+        # Plot KDE
+        ax3d.contourf(
+            XY_mesh[0], XY_mesh[1], kde, 
+            zdir='z', offset=zlim[0], 
+            cmap='Greys', alpha=0.5
+        )
+
+        # Restore original axis limits
+        ax3d.set_xlim(xlim)
+        ax3d.set_ylim(ylim)
+        ax3d.set_zlim(zlim)
+
     # Formatting
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    ax.legend(loc='upper left')
+    ax3d.set_xlabel("X")
+    ax3d.set_ylabel("Y")
+    ax3d.set_zlabel("Z")
+    ax3d.legend(loc='upper left')
+
+    # Plot MAD history
+    axmad.plot(mad_history, 'k')
+    axmad.set_xlabel("Iteration")
+    axmad.set_ylabel("Max Relative\nMAD (%)")
+
+    if mad_threshold is not None:
+        axmad.axhline(mad_threshold, color='red', linestyle='--')
     
     fig.tight_layout()
