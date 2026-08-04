@@ -22,5 +22,5 @@ dependencies = [
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["sindy*"]
+[tool.setuptools.packages.find]
+include = ["sindy*"]
