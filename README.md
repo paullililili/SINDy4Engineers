@@ -35,3 +35,17 @@ The tutorial itself can be found in [Tutorials](./Tutorials/) in the form of int
 After an introduction to SINDy and its methods in section 1 of the tutorial, we provide two separate example applications in the next two sections:
 1. System identification of a UAV system governed by ODEs.
 2. Identification of a chaotic flow-field in a thermosyphon heat exchanger.
+
+
+## Citation
+
+If you would like to use this in your research/course, please consider citing our paper:
+
+```bibtex
+@article{li2026sindytutorial,
+  title={An Introduction to Sparse Identification of Nonlinear Dynamics for Engineering Applications},
+  author={Li, Yao Cheng and Larra{\~n}aga, Ana and Brunton, Steven L and Fasel, Urban},
+  journal={arXiv preprint arXiv:2607.15077},
+  year={2026}
+}
+```

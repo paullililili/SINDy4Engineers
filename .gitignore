@@ -16,6 +16,7 @@ develop-eggs/
 dist/
 downloads/
 eggs/
+SINDyforEng/
 .eggs/
 lib/
 lib64/
@@ -157,6 +158,7 @@ cython_debug/
 # Datasets
 *.npz
 !Tutorials/S1 SINDy and its Extensions/data/*.npz
+!Tutorials/S1 SINDy and its Extensions/1-8 Ensembling Methods/data/*.npz
 !Tutorials/S2 UAV System ID/data/*.npz
 !Tutorials/S3 Thermosyphon Heat Exchanger/data/*.npz
 
